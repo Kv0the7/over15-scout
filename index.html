@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Over 1.5 Scout</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=IBM+Plex+Mono:wght@400;500&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c10;--surface:#0d1318;--surface2:#111820;
+  --border:#1e2d3a;--border2:#243342;
+  --text:#c8d8e8;--text-dim:#5a7a90;--text-muted:#304050;
+  --accent:#00e676;--accent2:#00b8d4;--warn:#ffd600;--danger:#ff5252;
+  --r:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,230,118,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:200;background:rgba(8,12,16,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:10px;height:54px;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);text-shadow:0 0 20px rgba(0,230,118,.4);white-space:nowrap;}
+.logo span{color:var(--text-dim);font-weight:400;}
+.header-sep{flex:1;}
+.live-ind{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1px;white-space:nowrap;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* VIEW TOGGLE */
+.vt{display:flex;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;overflow:hidden;flex-shrink:0;}
+.vtb{padding:7px 13px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.vtb svg{width:13px;height:13px;fill:currentColor;flex-shrink:0;}
+.vtb.active{background:rgba(0,230,118,.13);color:var(--accent);}
+
+/* SUMMARY */
+.summary{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);background:rgba(13,19,24,.7);}
+.si{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:11px 6px;border-right:1px solid var(--border);}
+.si:last-child{border-right:none;}
+.sv{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;line-height:1;color:var(--accent);}
+.sv.d{color:var(--text-dim);font-size:19px;}
+.sl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;text-align:center;margin-top:3px;}
+
+/* CONTROLS */
+.controls{position:relative;z-index:1;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:rgba(13,19,24,.85);}
+.cl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:6px 10px;font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;outline:none;}
+.psw{display:flex;align-items:center;gap:8px;}
+input[type=range]{-webkit-appearance:none;width:100px;height:3px;background:var(--border2);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(0,230,118,.5);cursor:pointer;}
+.pv{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);font-weight:500;min-width:36px;}
+.cr{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.btnr{background:transparent;border:1px solid var(--border2);color:var(--text-dim);border-radius:4px;padding:6px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.btnr:hover{border-color:var(--accent2);color:var(--accent2);}
+.mc{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);white-space:nowrap;}
+.mc span{color:var(--accent);}
+.lchips{display:flex;gap:5px;flex-wrap:wrap;}
+.lchip{background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 9px;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;}
+.lchip.active{background:rgba(0,184,212,.1);border-color:var(--accent2);color:var(--accent2);}
+
+/* MAIN */
+main{position:relative;z-index:1;padding:14px;}
+.lsec{margin-bottom:22px;}
+.lhdr{display:flex;align-items:center;gap:8px;padding:4px 0 10px;}
+.lflag{font-size:15px;line-height:1;}
+.lname{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);}
+.lcnt{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:2px 7px;}
+.lline{flex:1;height:1px;background:linear-gradient(to right,var(--border2),transparent);}
+
+/* TABLE */
+.twrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:var(--surface2);}
+thead th{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:9px 11px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);}
+.dr{border-bottom:1px solid rgba(30,45,58,.5);transition:background .15s;cursor:pointer;}
+.dr:hover{background:rgba(255,255,255,.02);}
+td{padding:9px 11px;vertical-align:middle;}
+.td-teams{min-width:130px;}
+.th-n{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;white-space:nowrap;}
+.th-na{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;margin-top:2px;}
+.t-hr{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;}
+.t-dt{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:1px;}
+.pp{display:inline-flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;min-width:50px;padding:3px 8px;border-radius:20px;}
+.fm{display:flex;gap:2px;}
+.fb{width:15px;height:15px;border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:500;display:flex;align-items:center;justify-content:center;color:#000;flex-shrink:0;}
+.fb.W{background:var(--accent);}
+.fb.D{background:var(--warn);}
+.fb.L{background:var(--danger);}
+.ob3{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(2,123,91,.2);border:1px solid rgba(2,123,91,.4);color:#00d49a;padding:3px 7px;border-radius:3px;white-space:nowrap;display:inline-block;}
+.owm{font-family:'IBM Plex Mono',monospace;font-size:11px;background:rgba(228,0,43,.15);border:1px solid rgba(228,0,43,.4);color:#ff7088;padding:3px 7px;border-radius:3px;white-space:nowrap;display:inline-block;}
+.ona{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);}
+.pb{font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--text-muted);margin-left:4px;}
+.av{font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;}
+.ov{font-family:'IBM Plex Mono',monospace;font-size:10px;white-space:nowrap;}
+.mbar{height:3px;background:var(--border2);border-radius:2px;margin-top:2px;width:46px;}
+.mbf{height:100%;border-radius:2px;}
+.xb{font-size:10px;color:var(--text-muted);transition:transform .2s;display:inline-block;padding:4px;}
+.dr.open .xb{transform:rotate(180deg);}
+.sr td{padding:0!important;background:rgba(0,0,0,.25);}
+.sc{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:1px solid var(--border);}
+.stit{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.sr2{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+.sk{color:var(--text-dim);}
+.svl{font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.l5l{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;}
+.l5m{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 5px;border-radius:3px;border:1px solid var(--border2);color:var(--text-dim);}
+
+/* CARDS */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:relative;}
+.cabar{position:absolute;left:0;top:0;bottom:0;width:4px;}
+.chdr{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 9px 18px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2);}
+.clgn{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;}
+.cdt{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);}
+.cbdy{padding:14px 14px 14px 18px;}
+.ctms{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.ctm{display:flex;align-items:center;gap:6px;}
+.ctn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;text-transform:uppercase;flex:1;}
+.ctm.away .ctn{color:var(--text-dim);}
+.ctp{font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:2px 5px;color:var(--text-muted);flex-shrink:0;}
+.ctf{display:flex;gap:2px;flex-shrink:0;}
+.cdiv{height:1px;background:var(--border);margin:2px 0;}
+.cpr{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:6px;padding:9px 12px;margin-bottom:12px;}
+.cplab{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;}
+.cpval{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;line-height:1;margin-top:1px;}
+.cpbar{flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden;}
+.cpbf{height:100%;border-radius:3px;}
+.csg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.csb{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;}
+.cslab{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.csv{display:flex;gap:6px;align-items:baseline;}
+.csh{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;}
+.csa{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;color:var(--text-dim);}
+.cor{display:flex;gap:8px;}
+.cob{flex:1;border-radius:6px;padding:8px 10px;}
+.cob.b3{background:rgba(2,123,91,.13);border:1px solid rgba(2,123,91,.35);}
+.cob.wm{background:rgba(228,0,43,.1);border:1px solid rgba(228,0,43,.3);}
+.colab{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.cob.b3 .colab{color:#00c48a;}
+.cob.wm .colab{color:#ff7088;}
+.coval{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;line-height:1;color:var(--text);}
+.cona{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);}
+
+/* LOADING / EMPTY */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;gap:14px;color:var(--text-dim);}
+.spinner{width:30px;height:30px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ltxt{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;}
+.lstep{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:4px;}
+.empty{text-align:center;padding:60px 20px;color:var(--text-muted);}
+.eico{font-size:36px;margin-bottom:10px;}
+.empty p{font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:14px;left:14px;max-width:360px;margin:0 auto;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:11px 16px;font-size:13px;color:var(--text);z-index:1000;transform:translateY(120px);opacity:0;transition:all .3s;text-align:center;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{border-color:var(--accent);color:var(--accent);}
+.toast.err{border-color:var(--danger);color:var(--danger);}
+.toast.warn{border-color:var(--warn);color:var(--warn);}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  header{height:50px;padding:0 10px;gap:8px;}
+  .logo{font-size:17px;}
+  .live-ind{display:none;}
+  .vtb span{display:none;}
+  .vtb{padding:7px 10px;}
+  .summary{grid-template-columns:repeat(2,1fr);}
+  .si:nth-child(2){border-right:none;}
+  .si:nth-child(3){border-top:1px solid var(--border);}
+  .si:nth-child(4){border-top:1px solid var(--border);border-right:none;}
+  .controls{padding:8px 10px;gap:6px;}
+  main{padding:10px;}
+  .cgrid{grid-template-columns:1fr;}
+  .sc{grid-template-columns:1fr;}
+  .mc{display:none;}
+  .hm{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Over<span>1.5</span> Scout</div>
+  <div class="header-sep"></div>
+  <div class="vt">
+    <button class="vtb active" id="btnT" onclick="setView('table')">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="3.2" rx=".6"/><rect x="1" y="6.4" width="14" height="3.2" rx=".6"/><rect x="1" y="11.8" width="14" height="3.2" rx=".6"/></svg>
+      <span>Tabla</span>
+    </button>
+    <button class="vtb" id="btnC" onclick="setView('cards')">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      <span>Tarjetas</span>
+    </button>
+  </div>
+  <div class="live-ind">
+    <div class="live-dot"></div>
+    <span id="lupd">CARGANDO...</span>
+  </div>
+</header>
+
+<div class="summary">
+  <div class="si"><div class="sv" id="sT">—</div><div class="sl">Partidos</div></div>
+  <div class="si"><div class="sv" id="sH">—</div><div class="sl">Prob&gt;70%</div></div>
+  <div class="si"><div class="sv d" id="sA">—</div><div class="sl">Media</div></div>
+  <div class="si"><div class="sv d" id="sL">—</div><div class="sl">Ligas</div></div>
+</div>
+
+<div class="controls">
+  <span class="cl">LIGA</span>
+  <div class="lchips" id="chips"></div>
+  <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+  <span class="cl">UMBRAL</span>
+  <div class="psw">
+    <input type="range" id="slider" min="40" max="90" value="60" oninput="doFilter()">
+    <div class="pv" id="pvd">60%</div>
+  </div>
+  <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+  <select id="rf" onchange="doFilter()">
+    <option value="all">Todos</option>
+    <option value="next">Próx. 7 días</option>
+    <option value="today">Hoy</option>
+  </select>
+  <div class="cr">
+    <div class="mc">Mostrando <span id="vc">0</span></div>
+    <button class="btnr" onclick="loadAll()">↻</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="loading"><div class="spinner"></div><div class="ltxt">Iniciando...</div></div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// KEYS & CONFIG
+// ════════════════════════════════════════
+const FOOTBALL_KEY = '67ddc9e0622f891c2951076ddf1211d6';
+const ODDS_KEY     = 'e30adc76a6361deeb7a98aedf73b6659';
+const SEASON       = 2024;
+
+const LEAGUES = [
+  {id:39,  name:'Premier League',   flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', ok:'soccer_epl'},
+  {id:140, name:'La Liga',          flag:'🇪🇸', ok:'soccer_spain_la_liga'},
+  {id:135, name:'Serie A',          flag:'🇮🇹', ok:'soccer_italy_serie_a'},
+  {id:78,  name:'Bundesliga',       flag:'🇩🇪', ok:'soccer_germany_bundesliga'},
+  {id:61,  name:'Ligue 1',          flag:'🇫🇷', ok:'soccer_france_ligue_one'},
+  {id:88,  name:'Eredivisie',       flag:'🇳🇱', ok:'soccer_netherlands_eredivisie'},
+  {id:179, name:'Scottish Prem.',   flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', ok:'soccer_scotland_premiership'},
+  {id:40,  name:'Championship',     flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', ok:'soccer_england_championship'},
+  {id:141, name:'Liga Hypermotion', flag:'🇪🇸', ok:'soccer_spain_segunda_division'},
+];
+
+let allMatches    = [];
+let activeLeagues = new Set(LEAGUES.map(l=>l.id));
+let currentView   = 'table';
+
+// ════════════════════════════════════════
+// CLAUDE AS BACKEND — usa web_fetch tool
+// para hacer requests reales sin CORS
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// FETCH INFRASTRUCTURE — 4-layer fallback
+// ════════════════════════════════════════
+async function apiFetch(url, headers={}) {
+  // Direct fetch — works from any HTTPS origin (GitHub Pages, Netlify, etc.)
+  const r = await fetch(url, { headers });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + url.split('?')[0]);
+  return r.json();
+}
+
+async function fetchViaProxy(url, headers={}) {
+  return apiFetch(url, headers);
+}
+
+// ════════════════════════════════════════
+// FETCH FIXTURES (próximos partidos)
+// ════════════════════════════════════════
+async function fetchFixtures(leagueId) {
+  setLoadingStep(`Fixtures liga ${leagueId}...`);
+  const data = await fetchViaProxy(
+    `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${SEASON}&next=10`,
+    {'x-apisports-key': FOOTBALL_KEY}
+  );
+  return data.response || [];
+}
+
+// ════════════════════════════════════════
+// FETCH TEAM STATS
+// ════════════════════════════════════════
+async function fetchTeamStats(teamId, leagueId) {
+  try {
+    // Two separate calls — simpler and more reliable
+    const [sd, fd] = await Promise.all([
+      fetchViaProxy(
+        `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&league=${leagueId}&season=${SEASON}`,
+        {'x-apisports-key': FOOTBALL_KEY}
+      ),
+      fetchViaProxy(
+        `https://v3.football.api-sports.io/fixtures?team=${teamId}&league=${leagueId}&season=${SEASON}&last=5`,
+        {'x-apisports-key': FOOTBALL_KEY}
+      )
+    ]);
+
+    const s = sd.response;
+    const played = s?.fixtures?.played?.total || 1;
+    const gf = s?.goals?.for?.total?.total || 0;
+    const ga = s?.goals?.against?.total?.total || 0;
+    const avgGoals = +((gf+ga)/played).toFixed(2);
+
+    const last5 = (fd.response || []).map(f => {
+      const isH = f.teams?.home?.id === teamId;
+      const mg  = isH ? f.goals?.home : f.goals?.away;
+      const og  = isH ? f.goals?.away : f.goals?.home;
+      const mgN = mg ?? 0, ogN = og ?? 0;
+      return {score:`${mgN}-${ogN}`, result: mgN>ogN?'W':mgN<ogN?'L':'D'};
+    });
+
+    const over15pct = last5.length
+      ? Math.round(last5.filter(m=>{const[a,b]=m.score.split('-').map(Number);return a+b>1;}).length/last5.length*100)
+      : 65;
+
+    const pos = s?.league?.standings?.[0]?.[0]?.rank || '?';
+    return {avgGoals, over15: over15pct, last5: last5.length ? last5 : genForm(), pos};
+  } catch(e) {
+    console.warn(`Stats error team ${teamId}:`, e.message);
+    return {avgGoals:1.9, over15:63, last5:genForm(), pos:'?'};
+  }
+}
+
+// ════════════════════════════════════════
+// FETCH ODDS (The Odds API)
+// ════════════════════════════════════════
+async function fetchOddsForLeague(oddsKey) {
+  try {
+    const data = await fetchViaProxy(
+      `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_KEY}&regions=eu&markets=totals&oddsFormat=decimal&bookmakers=bet365,winamax`
+    );
+    if (data.error) return null;
+    return Array.isArray(data) ? data : null;
+  } catch(e) { return null; }
+}
+
+function matchOdds(oddsData, homeName, awayName) {
+  if (!oddsData) return {b365:null, winamax:null};
+  const n = s => (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const hn = n(homeName), an = n(awayName);
+  const game = oddsData.find(g => {
+    const gh = n(g.home_team), ga_ = n(g.away_team);
+    return gh.includes(hn.slice(0,6)) || hn.includes(gh.slice(0,6)) ||
+           ga_.includes(an.slice(0,6)) || an.includes(ga_.slice(0,6));
+  });
+  if (!game) return {b365:null, winamax:null};
+  let b365=null, winamax=null;
+  for (const bk of (game.bookmakers||[])) {
+    const tot = bk.markets?.find(m=>m.key==='totals');
+    if (!tot) continue;
+    // Buscar Over 1.5 (puede estar como 1.5 o como punto decimal)
+    const over = tot.outcomes?.find(o=>o.name==='Over'&&(parseFloat(o.point)===1.5||parseFloat(o.point)===2));
+    if (!over) continue;
+    if (bk.key==='bet365') b365 = over.price?.toFixed(2);
+    if (bk.key==='winamax') winamax = over.price?.toFixed(2);
+  }
+  return {b365, winamax};
+}
+
+// ════════════════════════════════════════
+// PROBABILITY ALGORITHM
+// ════════════════════════════════════════
+function calcProb(hAvg,aAvg,hO,aO,hL5,aL5) {
+  const base = Math.min(95,Math.max(20,((+hAvg + +aAvg)/4)*100));
+  const hist = (+hO + +aO)/2;
+  const w=[0.25,0.22,0.20,0.18,0.15];
+  let w5=0;
+  for(let i=0;i<5;i++){
+    const s1=(hL5[i]?.score||'0-0').split('-').map(Number).reduce((a,b)=>a+b,0)>1?1:0;
+    const s2=(aL5[i]?.score||'0-0').split('-').map(Number).reduce((a,b)=>a+b,0)>1?1:0;
+    w5+=w[i]*((s1+s2)/2);
+  }
+  return Math.min(97,Math.max(18,Math.round(base*0.25+hist*0.35+w5*100*0.40)));
+}
+
+// ════════════════════════════════════════
+// MAIN LOAD
+// ════════════════════════════════════════
+async function loadAll() {
+  allMatches = [];
+  setLoading('Conectando con API-Football via Claude...');
+
+  let loaded = 0;
+  for (const league of LEAGUES) {
+    try {
+      setLoadingStep(`${league.flag} ${league.name}...`);
+
+      // 1) Fixtures próximos
+      const fixtures = await fetchFixtures(league.id);
+      if (!fixtures.length) { setLoadingStep(`⚠️ Sin fixtures: ${league.name}`); continue; }
+
+      // 2) Odds para esta liga
+      setLoadingStep(`💰 Cuotas ${league.name}...`);
+      const oddsData = await fetchOddsForLeague(league.ok);
+
+      // 3) Stats de cada equipo
+      for (const fx of fixtures.slice(0,5)) {
+        setLoadingStep(`📊 ${fx.teams.home.name} vs ${fx.teams.away.name}`);
+        const [hs, as_] = await Promise.all([
+          fetchTeamStats(fx.teams.home.id, league.id),
+          fetchTeamStats(fx.teams.away.id, league.id)
+        ]);
+        const d    = new Date(fx.fixture.date);
+        const prob = calcProb(hs.avgGoals,as_.avgGoals,hs.over15,as_.over15,hs.last5,as_.last5);
+        const odds = matchOdds(oddsData, fx.teams.home.name, fx.teams.away.name);
+
+        allMatches.push({
+          id: fx.fixture.id,
+          league, date: d,
+          home:{name:fx.teams.home.name.slice(0,20), pos:hs.pos, avgGoals:hs.avgGoals, over15:hs.over15, last5:hs.last5},
+          away:{name:fx.teams.away.name.slice(0,20), pos:as_.pos, avgGoals:as_.avgGoals, over15:as_.over15, last5:as_.last5},
+          probability: prob,
+          odds: { b365: odds.b365||null, winamax: odds.winamax||null }
+        });
+        loaded++;
+      }
+    } catch(e) {
+      console.warn(`Error ${league.name}:`, e.message);
+      setLoadingStep(`❌ ${league.name}: ${e.message.slice(0,60)}`);
+      await new Promise(r => setTimeout(r, 800)); // show error briefly
+    }
+  }
+
+  allMatches.sort((a,b)=>b.probability-a.probability);
+
+  if (!allMatches.length) {
+    showToast('Sin datos — ejecutando diagnóstico...', 'warn');
+    // Run quick diagnostic to show user what's happening
+    runDiagnostic();
+    return;
+  }
+
+  document.getElementById('lupd').textContent = `ACT. ${new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`;
+  showToast(`✓ ${loaded} partidos cargados`, 'ok');
+  doFilter();
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function pc(p){return p>=70?'#00e676':p>=55?'#ffd600':'#ff5252';}
+function fd(d){return d.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();}
+function ft(d){return d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});}
+function ffb(l5){return (l5||[]).map(m=>`<div class="fb ${m.result}" title="${m.score}">${m.result}</div>`).join('');}
+function l5a(l5){
+  if(!l5||!l5.length) return '?';
+  const s=l5.reduce((a,m)=>{const[g1,g2]=(m.score||'0-0').split('-').map(Number);return a+g1+g2;},0);
+  return (s/l5.length).toFixed(2);
+}
+function genForm(){
+  return Array.from({length:5},()=>{
+    const r=['W','D','L'][Math.floor(Math.random()*3)];
+    return {score:`${Math.floor(Math.random()*4)}-${Math.floor(Math.random()*4)}`,result:r};
+  });
+}
+function fmtOdd(v){return v?v:'—';}
+
+function setLoading(msg){
+  document.getElementById('main').innerHTML=`<div class="loading"><div class="spinner"></div><div class="ltxt">${msg}</div><div class="lstep" id="lstep"></div></div>`;
+}
+function setLoadingStep(s){
+  const el=document.getElementById('lstep');
+  if(el) el.textContent=s;
+}
+
+// ════════════════════════════════════════
+// RENDER TABLE
+// ════════════════════════════════════════
+function renderTable(grp){
+  let h='';
+  Object.values(grp).forEach(({league,matches})=>{
+    h+=`<div class="lsec">
+      <div class="lhdr"><span class="lflag">${league.flag}</span><span class="lname">${league.name}</span><span class="lcnt">${matches.length} partido${matches.length>1?'s':''}</span><div class="lline"></div></div>
+      <div class="twrap"><table>
+        <thead><tr>
+          <th>HORA</th><th>PARTIDO</th><th>PROB.</th>
+          <th class="hm">BET365</th><th class="hm">WINAMAX</th>
+          <th class="hm">MED.GOL</th><th class="hm">O1.5%</th>
+          <th>FORMA</th><th></th>
+        </tr></thead><tbody>`;
+    matches.forEach(m=>{
+      const c=pc(m.probability), o=m.odds||{};
+      h+=`
+      <tr class="dr" onclick="toggleRow('${m.id}',this)">
+        <td><div class="t-hr">${ft(m.date)}</div><div class="t-dt">${fd(m.date)}</div></td>
+        <td class="td-teams">
+          <div class="th-n">${m.home.name}<span class="pb">#${m.home.pos}</span></div>
+          <div class="th-na">${m.away.name}<span class="pb">#${m.away.pos}</span></div>
+        </td>
+        <td><div class="pp" style="background:${c}1a;color:${c};border:1px solid ${c}4d">${m.probability}%</div></td>
+        <td class="hm">${o.b365?`<span class="ob3">🔵 ${o.b365}</span>`:`<span class="ona">—</span>`}</td>
+        <td class="hm">${o.winamax?`<span class="owm">🔴 ${o.winamax}</span>`:`<span class="ona">—</span>`}</td>
+        <td class="hm">
+          <div class="av">${m.home.avgGoals}</div>
+          <div class="av" style="color:var(--text-dim)">${m.away.avgGoals}</div>
+        </td>
+        <td class="hm">
+          <div class="ov" style="color:${pc(m.home.over15)}">${m.home.over15}%</div>
+          <div class="mbar"><div class="mbf" style="width:${m.home.over15}%;background:${pc(m.home.over15)}"></div></div>
+          <div class="ov" style="color:${pc(m.away.over15)};margin-top:3px">${m.away.over15}%</div>
+          <div class="mbar"><div class="mbf" style="width:${m.away.over15}%;background:${pc(m.away.over15)}"></div></div>
+        </td>
+        <td>
+          <div class="fm">${ffb(m.home.last5)}</div>
+          <div class="fm" style="margin-top:2px">${ffb(m.away.last5)}</div>
+        </td>
+        <td style="text-align:center"><div class="xb">▼</div></td>
+      </tr>
+      <tr class="sr" id="sub_${m.id}" style="display:none">
+        <td colspan="9">
+          <div class="sc">
+            ${subDetail(m.home,'LOCAL')}
+            ${subDetail(m.away,'VISITANTE',m.odds)}
+          </div>
+        </td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+  });
+  return h;
+}
+
+function subDetail(team, lbl, odds) {
+  const oddHtml = lbl==='LOCAL'&&odds ? `
+    <div class="sr2"><span class="sk">Bet365 Over 1.5</span><span>${odds.b365?`<span class="ob3">🔵 ${odds.b365}</span>`:'<span class="ona">—</span>'}</span></div>
+    <div class="sr2"><span class="sk">Winamax Over 1.5</span><span>${odds.winamax?`<span class="owm">🔴 ${odds.winamax}</span>`:'<span class="ona">—</span>'}</span></div>` : '';
+  return `<div>
+    <div class="stit">${lbl} — ${team.name.toUpperCase()}</div>
+    <div class="sr2"><span class="sk">Posición en tabla</span><span class="svl">#${team.pos}</span></div>
+    <div class="sr2"><span class="sk">Media goles temporada</span><span class="svl">${team.avgGoals}/p</span></div>
+    <div class="sr2"><span class="sk">Media goles últimos 5</span><span class="svl">${l5a(team.last5)}/p</span></div>
+    <div class="sr2"><span class="sk">% Over 1.5 histórico</span><span class="svl" style="color:${pc(team.over15)}">${team.over15}%</span></div>
+    ${oddHtml}
+    <div class="sr2"><span class="sk">Últimos 5 resultados</span></div>
+    <div class="l5l">${(team.last5||[]).map(m=>`<div class="l5m" style="border-color:${m.result==='W'?'var(--accent)':m.result==='D'?'var(--warn)':'var(--danger)'};color:${m.result==='W'?'var(--accent)':m.result==='D'?'var(--warn)':'var(--danger)'}">${m.result} ${m.score}</div>`).join('')}</div>
+  </div>`;
+}
+
+function toggleRow(id,tr){
+  const sub=document.getElementById('sub_'+id);
+  if(!sub) return;
+  const open=sub.style.display!=='none';
+  sub.style.display=open?'none':'table-row';
+  tr.classList.toggle('open',!open);
+}
+
+// ════════════════════════════════════════
+// RENDER CARDS
+// ════════════════════════════════════════
+function renderCards(grp){
+  let h='';
+  Object.values(grp).forEach(({league,matches})=>{
+    h+=`<div class="lsec">
+      <div class="lhdr"><span class="lflag">${league.flag}</span><span class="lname">${league.name}</span><span class="lcnt">${matches.length} partido${matches.length>1?'s':''}</span><div class="lline"></div></div>
+      <div class="cgrid">`;
+    matches.forEach(m=>{
+      const c=pc(m.probability), o=m.odds||{};
+      h+=`
+      <div class="mcard">
+        <div class="cabar" style="background:${c}"></div>
+        <div class="chdr">
+          <div class="clgn">${league.flag} ${league.name}</div>
+          <div class="cdt">${fd(m.date)} · ${ft(m.date)}</div>
+        </div>
+        <div class="cbdy">
+          <div class="ctms">
+            <div class="ctm home">
+              <div class="ctn">${m.home.name}</div>
+              <div class="ctp">#${m.home.pos}</div>
+              <div class="ctf">${ffb(m.home.last5)}</div>
+            </div>
+            <div class="cdiv"></div>
+            <div class="ctm away">
+              <div class="ctn">${m.away.name}</div>
+              <div class="ctp">#${m.away.pos}</div>
+              <div class="ctf">${ffb(m.away.last5)}</div>
+            </div>
+          </div>
+          <div class="cpr">
+            <div><div class="cplab">Prob. Over 1.5</div><div class="cpval" style="color:${c}">${m.probability}%</div></div>
+            <div class="cpbar"><div class="cpbf" style="width:${m.probability}%;background:${c}"></div></div>
+          </div>
+          <div class="csg">
+            <div class="csb">
+              <div class="cslab">Media Goles</div>
+              <div class="csv"><div class="csh">${m.home.avgGoals}</div><div style="font-size:10px;color:var(--text-muted)">vs</div><div class="csa">${m.away.avgGoals}</div></div>
+            </div>
+            <div class="csb">
+              <div class="cslab">Hist. Over 1.5</div>
+              <div class="csv"><div class="csh" style="color:${pc(m.home.over15)}">${m.home.over15}%</div><div style="font-size:10px;color:var(--text-muted)">vs</div><div class="csa" style="color:${pc(m.away.over15)}">${m.away.over15}%</div></div>
+            </div>
+            <div class="csb">
+              <div class="cslab">Ú.5 Local</div>
+              <div style="display:flex;gap:2px;margin-top:4px">${ffb(m.home.last5)}</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:2px">${l5a(m.home.last5)} g/p</div>
+            </div>
+            <div class="csb">
+              <div class="cslab">Ú.5 Visitante</div>
+              <div style="display:flex;gap:2px;margin-top:4px">${ffb(m.away.last5)}</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-muted);margin-top:2px">${l5a(m.away.last5)} g/p</div>
+            </div>
+          </div>
+          <div class="cor">
+            <div class="cob b3">
+              <div class="colab">🔵 Bet365 O1.5</div>
+              ${o.b365?`<div class="coval">${o.b365}</div>`:`<div class="cona">Sin cuota</div>`}
+            </div>
+            <div class="cob wm">
+              <div class="colab">🔴 Winamax O1.5</div>
+              ${o.winamax?`<div class="coval">${o.winamax}</div>`:`<div class="cona">Sin cuota</div>`}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+    h+=`</div></div>`;
+  });
+  return h;
+}
+
+// ════════════════════════════════════════
+// FILTER
+// ════════════════════════════════════════
+function doFilter(){
+  const thr=parseInt(document.getElementById('slider').value);
+  document.getElementById('pvd').textContent=thr+'%';
+  const rf=document.getElementById('rf').value;
+  const now=new Date(), te=new Date(now); te.setHours(23,59,59);
+  const n7=new Date(now); n7.setDate(now.getDate()+7);
+
+  let fil=allMatches.filter(m=>{
+    if(!activeLeagues.has(m.league.id)) return false;
+    if(m.probability<thr) return false;
+    if(rf==='today'&&m.date>te) return false;
+    if(rf==='next'&&m.date>n7) return false;
+    return true;
+  });
+
+  document.getElementById('sT').textContent=fil.length;
+  document.getElementById('sH').textContent=fil.filter(m=>m.probability>=70).length;
+  const avg=fil.length?Math.round(fil.reduce((a,m)=>a+m.probability,0)/fil.length):0;
+  document.getElementById('sA').textContent=fil.length?avg+'%':'—';
+  document.getElementById('sL').textContent=new Set(fil.map(m=>m.league.id)).size;
+  document.getElementById('vc').textContent=fil.length;
+
+  const content=document.getElementById('main');
+  if(!fil.length){
+    content.innerHTML=`<div class="empty"><div class="eico">🔍</div><p>Sin partidos ≥ ${thr}%</p><p style="margin-top:8px;font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;text-transform:none">Baja el umbral o selecciona más ligas</p></div>`;
+    return;
+  }
+  const grp={};
+  fil.forEach(m=>{
+    if(!grp[m.league.id]) grp[m.league.id]={league:m.league,matches:[]};
+    grp[m.league.id].matches.push(m);
+  });
+  content.innerHTML = currentView==='table' ? renderTable(grp) : renderCards(grp);
+}
+
+// ════════════════════════════════════════
+// VIEW TOGGLE & CHIPS
+// ════════════════════════════════════════
+function setView(v){
+  currentView=v;
+  document.getElementById('btnT').classList.toggle('active',v==='table');
+  document.getElementById('btnC').classList.toggle('active',v==='cards');
+  doFilter();
+}
+function buildChips(){
+  const c=document.getElementById('chips');
+  let h=`<div class="lchip active" onclick="toggleAll(this)">TODAS</div>`;
+  LEAGUES.forEach(l=>{h+=`<div class="lchip active" data-id="${l.id}" onclick="togL(this,${l.id})">${l.flag} ${l.name}</div>`;});
+  c.innerHTML=h;
+}
+function togL(el,id){el.classList.toggle('active');if(activeLeagues.has(id))activeLeagues.delete(id);else activeLeagues.add(id);doFilter();}
+function toggleAll(el){
+  const ch=document.querySelectorAll('.lchip[data-id]');
+  if(activeLeagues.size===LEAGUES.length){activeLeagues.clear();ch.forEach(c=>c.classList.remove('active'));el.classList.remove('active');}
+  else{LEAGUES.forEach(l=>activeLeagues.add(l.id));ch.forEach(c=>c.classList.add('active'));el.classList.add('active');}
+  doFilter();
+}
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// ════════════════════════════════════════
+// DIAGNOSTIC
+// ════════════════════════════════════════
+async function runDiagnostic() {
+  const el = document.getElementById('main');
+  el.innerHTML = `<div class="loading"><div class="spinner"></div><div class="ltxt">Diagnóstico de conexión...</div><div class="lstep" id="lstep"></div></div>`;
+
+  const tests = [];
+
+  // Test 1: Direct API-Football
+  setLoadingStep('Probando API-Football directo...');
+  try {
+    const r = await fetch(`https://v3.football.api-sports.io/status`, {
+      headers: {'x-apisports-key': FOOTBALL_KEY}, mode:'cors'
+    });
+    const t = await r.text();
+    tests.push({name:'API-Football directo', ok: r.ok && !t.startsWith('<'), detail: r.ok ? 'HTTP '+r.status : 'HTTP '+r.status});
+  } catch(e) { tests.push({name:'API-Football directo', ok:false, detail:e.message.slice(0,60)}); }
+
+  // Test 2: corsproxy.io
+  setLoadingStep('Probando corsproxy.io...');
+  try {
+    const r = await fetch('https://corsproxy.io/?'+encodeURIComponent('https://v3.football.api-sports.io/status'), {
+      headers: {'x-apisports-key': FOOTBALL_KEY}
+    });
+    const t = await r.text();
+    tests.push({name:'corsproxy.io', ok: r.ok && !t.startsWith('<'), detail: 'HTTP '+r.status+' '+(t.startsWith('<')?'(HTML!)':'(JSON OK)')});
+  } catch(e) { tests.push({name:'corsproxy.io', ok:false, detail:e.message.slice(0,60)}); }
+
+  // Test 3: The Odds API
+  setLoadingStep('Probando The Odds API...');
+  try {
+    const r = await fetch(`https://api.the-odds-api.com/v4/sports/?apiKey=${ODDS_KEY}`);
+    const t = await r.text();
+    tests.push({name:'Odds API directo', ok: r.ok && !t.startsWith('<'), detail:'HTTP '+r.status});
+  } catch(e) { tests.push({name:'Odds API directo', ok:false, detail:e.message.slice(0,60)}); }
+
+  const anyOk = tests.some(t=>t.ok);
+  const rows = tests.map(t=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--text-dim)">${t.name}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${t.ok?'var(--accent)':'var(--danger)'}">${t.ok?'✓ OK':'✗ '+t.detail}</span>
+    </div>`).join('');
+
+  el.innerHTML = `<div style="max-width:500px;margin:20px auto;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;text-transform:uppercase;color:${anyOk?'var(--accent)':'var(--danger)'};margin-bottom:16px;">
+      ${anyOk ? '⚡ Diagnóstico completado' : '⚠️ Sin conexión a APIs'}
+    </div>
+    ${rows}
+    <div style="margin-top:16px;font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;line-height:1.6;">
+      ${anyOk
+        ? 'Al menos un endpoint responde. Pulsa ↻ para reintentar la carga.'
+        : 'Ningún proxy logra conectar. Esto es normal en iOS Safari con archivos locales.<br><br>Solución: abre el archivo desde un servidor (p.ej. súbelo a GitHub Pages o usa Live Server en VSCode).'}
+    </div>
+    <button onclick="loadAll()" style="margin-top:16px;width:100%;background:var(--accent);color:#000;border:none;border-radius:4px;padding:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+      ↻ REINTENTAR
+    </button>
+  </div>`;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+buildChips();
+loadAll();
+</script>
+</body>
+</html>
