@@ -704,57 +704,70 @@ function showToast(msg,type=''){
 // ════════════════════════════════════════
 async function runDiagnostic() {
   const el = document.getElementById('main');
-  el.innerHTML = `<div class="loading"><div class="spinner"></div><div class="ltxt">Diagnóstico de conexión...</div><div class="lstep" id="lstep"></div></div>`;
+  el.innerHTML = `<div class="loading"><div class="spinner"></div><div class="ltxt">Diagnóstico...</div><div class="lstep" id="lstep"></div></div>`;
 
-  const tests = [];
+  const results = [];
 
-  // Test 1: Direct API-Football
-  setLoadingStep('Probando API-Football directo...');
+  // Test API-Football status
+  setLoadingStep('Probando API-Football...');
   try {
-    const r = await fetch(`https://v3.football.api-sports.io/status`, {
-      headers: {'x-apisports-key': FOOTBALL_KEY}, mode:'cors'
-    });
-    const t = await r.text();
-    tests.push({name:'API-Football directo', ok: r.ok && !t.startsWith('<'), detail: r.ok ? 'HTTP '+r.status : 'HTTP '+r.status});
-  } catch(e) { tests.push({name:'API-Football directo', ok:false, detail:e.message.slice(0,60)}); }
+    const r = await apiFetch('https://v3.football.api-sports.io/status', {'x-apisports-key': FOOTBALL_KEY});
+    const sub = r.response?.subscription;
+    results.push({label:'API-Football', ok:true, detail: sub ? `Plan: ${sub.plan} | Requests left: ${r.response?.requests?.current}/${r.response?.requests?.limit_day}` : JSON.stringify(r).slice(0,80)});
+  } catch(e) { results.push({label:'API-Football', ok:false, detail:e.message.slice(0,80)}); }
 
-  // Test 2: corsproxy.io
-  setLoadingStep('Probando corsproxy.io...');
+  // Test fixtures Premier League 2025
+  setLoadingStep('Probando fixtures Premier League 2025...');
   try {
-    const r = await fetch('https://corsproxy.io/?'+encodeURIComponent('https://v3.football.api-sports.io/status'), {
-      headers: {'x-apisports-key': FOOTBALL_KEY}
-    });
-    const t = await r.text();
-    tests.push({name:'corsproxy.io', ok: r.ok && !t.startsWith('<'), detail: 'HTTP '+r.status+' '+(t.startsWith('<')?'(HTML!)':'(JSON OK)')});
-  } catch(e) { tests.push({name:'corsproxy.io', ok:false, detail:e.message.slice(0,60)}); }
+    const r = await apiFetch('https://v3.football.api-sports.io/fixtures?league=39&season=2025&next=3', {'x-apisports-key': FOOTBALL_KEY});
+    const count = r.response?.length || 0;
+    const first = r.response?.[0];
+    results.push({label:'PL fixtures (2025, next=3)', ok:count>0, detail: count>0 ? `${count} partidos. Próximo: ${first?.teams?.home?.name} vs ${first?.teams?.away?.name} (${first?.fixture?.date?.slice(0,10)})` : `0 fixtures. Errors: ${JSON.stringify(r.errors).slice(0,60)}`});
+  } catch(e) { results.push({label:'PL fixtures 2025', ok:false, detail:e.message.slice(0,80)}); }
 
-  // Test 3: The Odds API
-  setLoadingStep('Probando The Odds API...');
+  // Test fixtures Premier League 2024 (fallback)
+  setLoadingStep('Probando fixtures Premier League 2024...');
   try {
-    const r = await fetch(`https://api.the-odds-api.com/v4/sports/?apiKey=${ODDS_KEY}`);
-    const t = await r.text();
-    tests.push({name:'Odds API directo', ok: r.ok && !t.startsWith('<'), detail:'HTTP '+r.status});
-  } catch(e) { tests.push({name:'Odds API directo', ok:false, detail:e.message.slice(0,60)}); }
+    const r = await apiFetch('https://v3.football.api-sports.io/fixtures?league=39&season=2024&next=3', {'x-apisports-key': FOOTBALL_KEY});
+    const count = r.response?.length || 0;
+    results.push({label:'PL fixtures (2024, next=3)', ok:count>0, detail: count>0 ? `${count} partidos encontrados` : `0 fixtures. Errors: ${JSON.stringify(r.errors).slice(0,60)}`});
+  } catch(e) { results.push({label:'PL fixtures 2024', ok:false, detail:e.message.slice(0,80)}); }
 
-  const anyOk = tests.some(t=>t.ok);
-  const rows = tests.map(t=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:13px;color:var(--text-dim)">${t.name}</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${t.ok?'var(--accent)':'var(--danger)'}">${t.ok?'✓ OK':'✗ '+t.detail}</span>
+  // Test leagues available
+  setLoadingStep('Comprobando temporadas disponibles...');
+  try {
+    const r = await apiFetch('https://v3.football.api-sports.io/leagues?id=39&current=true', {'x-apisports-key': FOOTBALL_KEY});
+    const lg = r.response?.[0];
+    const season = lg?.seasons?.find(s=>s.current);
+    results.push({label:'Premier League temporada actual', ok:!!season, detail: season ? `Temporada: ${season.year} | Start: ${season.start} | End: ${season.end}` : 'No encontrada'});
+  } catch(e) { results.push({label:'Temporada PL', ok:false, detail:e.message.slice(0,80)}); }
+
+  // Test Odds API
+  setLoadingStep('Probando Odds API...');
+  try {
+    const r = await apiFetch(`https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?apiKey=${ODDS_KEY}&regions=eu&markets=totals&oddsFormat=decimal&bookmakers=bet365,winamax`);
+    const count = Array.isArray(r) ? r.length : 0;
+    results.push({label:'Odds API (EPL)', ok:count>0, detail: count>0 ? `${count} partidos con cuotas` : (r.message||JSON.stringify(r).slice(0,60))});
+  } catch(e) { results.push({label:'Odds API', ok:false, detail:e.message.slice(0,80)}); }
+
+  const rows = results.map(t=>`
+    <div style="padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text-dim);font-weight:500">${t.label}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${t.ok?'var(--accent)':'var(--danger)'}">
+          ${t.ok?'✓ OK':'✗ FAIL'}
+        </span>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${t.ok?'var(--text-dim)':'var(--danger)'};margin-top:3px;word-break:break-all">
+        ${t.detail}
+      </div>
     </div>`).join('');
 
-  el.innerHTML = `<div style="max-width:500px;margin:20px auto;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;text-transform:uppercase;color:${anyOk?'var(--accent)':'var(--danger)'};margin-bottom:16px;">
-      ${anyOk ? '⚡ Diagnóstico completado' : '⚠️ Sin conexión a APIs'}
-    </div>
+  el.innerHTML = `<div style="max-width:620px;margin:20px auto;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:16px;">🔍 DIAGNÓSTICO DETALLADO</div>
     ${rows}
-    <div style="margin-top:16px;font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;line-height:1.6;">
-      ${anyOk
-        ? 'Al menos un endpoint responde. Pulsa ↻ para reintentar la carga.'
-        : 'Ningún proxy logra conectar. Esto es normal en iOS Safari con archivos locales.<br><br>Solución: abre el archivo desde un servidor (p.ej. súbelo a GitHub Pages o usa Live Server en VSCode).'}
-    </div>
     <button onclick="loadAll()" style="margin-top:16px;width:100%;background:var(--accent);color:#000;border:none;border-radius:4px;padding:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
-      ↻ REINTENTAR
+      ↻ REINTENTAR CARGA
     </button>
   </div>`;
 }
