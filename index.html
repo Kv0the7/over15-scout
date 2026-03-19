@@ -237,7 +237,7 @@ td{padding:9px 11px;vertical-align:middle;}
 // ════════════════════════════════════════
 const FOOTBALL_KEY = '67ddc9e0622f891c2951076ddf1211d6';
 const ODDS_KEY     = 'e30adc76a6361deeb7a98aedf73b6659';
-const SEASON       = 2024;
+const SEASON       = 2025;
 
 const LEAGUES = [
   {id:39,  name:'Premier League',   flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', ok:'soccer_epl'},
@@ -277,12 +277,20 @@ async function fetchViaProxy(url, headers={}) {
 // FETCH FIXTURES (próximos partidos)
 // ════════════════════════════════════════
 async function fetchFixtures(leagueId) {
-  setLoadingStep(`Fixtures liga ${leagueId}...`);
-  const data = await fetchViaProxy(
+  setLoadingStep(`${leagueId}...`);
+  // Try next 10 fixtures first
+  const data = await apiFetch(
     `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${SEASON}&next=10`,
     {'x-apisports-key': FOOTBALL_KEY}
   );
-  return data.response || [];
+  const res = data.response || [];
+  if (res.length) return res;
+  // Fallback: current round
+  const data2 = await apiFetch(
+    `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${SEASON}&round=current`,
+    {'x-apisports-key': FOOTBALL_KEY}
+  );
+  return data2.response || [];
 }
 
 // ════════════════════════════════════════
@@ -292,11 +300,11 @@ async function fetchTeamStats(teamId, leagueId) {
   try {
     // Two separate calls — simpler and more reliable
     const [sd, fd] = await Promise.all([
-      fetchViaProxy(
+      apiFetch(
         `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&league=${leagueId}&season=${SEASON}`,
         {'x-apisports-key': FOOTBALL_KEY}
       ),
-      fetchViaProxy(
+      apiFetch(
         `https://v3.football.api-sports.io/fixtures?team=${teamId}&league=${leagueId}&season=${SEASON}&last=5`,
         {'x-apisports-key': FOOTBALL_KEY}
       )
@@ -333,7 +341,7 @@ async function fetchTeamStats(teamId, leagueId) {
 // ════════════════════════════════════════
 async function fetchOddsForLeague(oddsKey) {
   try {
-    const data = await fetchViaProxy(
+    const data = await apiFetch(
       `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${ODDS_KEY}&regions=eu&markets=totals&oddsFormat=decimal&bookmakers=bet365,winamax`
     );
     if (data.error) return null;
@@ -385,7 +393,7 @@ function calcProb(hAvg,aAvg,hO,aO,hL5,aL5) {
 // ════════════════════════════════════════
 async function loadAll() {
   allMatches = [];
-  setLoading('Conectando con API-Football via Claude...');
+  setLoading('Cargando partidos...');
 
   let loaded = 0;
   for (const league of LEAGUES) {
@@ -422,9 +430,9 @@ async function loadAll() {
         loaded++;
       }
     } catch(e) {
-      console.warn(`Error ${league.name}:`, e.message);
-      setLoadingStep(`❌ ${league.name}: ${e.message.slice(0,60)}`);
-      await new Promise(r => setTimeout(r, 800)); // show error briefly
+      console.warn(`Error ${league.name}:`, e);
+      setLoadingStep(`⚠️ ${league.name}: ${e.message.slice(0,80)}`);
+      await new Promise(r => setTimeout(r, 600));
     }
   }
 
